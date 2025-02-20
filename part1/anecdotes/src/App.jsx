@@ -1,5 +1,6 @@
 import { useState } from 'react'
 const arr = Array(8).fill(0)
+var maxVotes = 0
 const App = () => {
   const anecdotes = [
     'If it hurts, do it more often.',
@@ -22,8 +23,9 @@ const App = () => {
   const onClickVotes = () => {
     const copy = [...votes]
     copy[selected] = copy[selected] +1
-    if(copy[selected] > maxVoted) {
+    if(copy[selected] > maxVotes) {
       setMaxVoted(selected)
+      maxVotes = copy[selected]
     }
     setVotes(copy) 
   }
