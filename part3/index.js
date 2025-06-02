@@ -1,3 +1,5 @@
+require('dotenv').config();
+const Person = require('./models/person');
 const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');const app = express();
@@ -13,33 +15,14 @@ app.use((req,res,next) => {
         morgan('tiny')(req,res,next);
     }
 });
-let persons = [
-    { 
-      "id": "1",
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": "2",
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": "3",
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": "4",
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
+
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });
 app.get('/api/persons', (req, res) => {
-    res.json(persons)
+    Person.find({}).then(persons => {
+        res.json(persons);
+    });
 });
 app.get('/info', (req, res) => {
     const date = new Date();
@@ -49,12 +32,16 @@ app.get('/info', (req, res) => {
 });
 app.get('/api/persons/:id',(req,res)=> {
     const id = req.params.id;
-    const person = persons.find(person => person.id === id);
-    if(person){
-        res.json(person);
-    } else {
-        res.status(404).end();
-    }
+    Person.findById(id).then(person => {
+        if (person) {
+            res.json(person);
+        } else {
+            res.status(404).end();
+        }
+    }).catch(error => {
+        console.error('Error fetching person:', error.message);
+        res.status(500).json({ error: 'Failed to fetch person' });
+    });
 });
 app.delete('/api/persons/:id', (request,response)=>{
     const id = request.params.id;
@@ -64,22 +51,21 @@ app.delete('/api/persons/:id', (request,response)=>{
 app.post('/api/persons', (request, response) => {
     const person = request.body;
     if (!person.name || !person.number) {
-        return response.status(400).json({ error: 'name or number missing' });
+        return response.status(400).json({ error: 'content missing' });
     }
-    if (persons.find(p => p.name === person.name)) {
-        return response.status(400).json({ error: 'name must be unique' });
-    }
-    person.id = Math.floor(Math.random() * 10000).toString();
-    const newPerson = {
-        id: person.id,
-        name:person.name,
-        number:person.number,
-    };
-    persons = persons.concat(newPerson);
-    response.json(newPerson);
+    const newPerson = new Person({
+        name: person.name,
+        number: person.number,
+    });
+    newPerson.save().then(savedPerson => {
+        response.json(savedPerson);
+    }).catch(error => {
+        console.error('Error saving person:', error.message);
+        response.status(500).json({ error: 'Failed to save person' });
+    });
     
 });
-const PORT = process.env.port || 3001;
+const PORT = process.env.port;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
