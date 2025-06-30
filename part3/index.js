@@ -25,12 +25,18 @@ app.get('/api/persons', (req, res) => {
     });
 });
 app.get('/info', (req, res) => {
-    const date = new Date();
-    const info = `<p>Phonebook has info for ${persons.length} people</p>
-                  <p>${date}</p>`;
-    res.send(info);
+  const date = new Date();
+
+  Person.countDocuments({})
+    .then(count => {
+      const info = `<p>Phonebook has info for ${count} people</p>
+                    <p>${date}</p>`;
+      res.send(info);
+    })
+    .catch(error => next(error));
 });
-app.get('/api/persons/:id',(req,res)=> {
+
+app.get('/api/persons/:id',(req,res,next)=> {
     const id = req.params.id;
     Person.findById(id).then(person => {
         if (person) {
@@ -38,12 +44,9 @@ app.get('/api/persons/:id',(req,res)=> {
         } else {
             res.status(404).end();
         }
-    }).catch(error => {
-        console.error('Error fetching person:', error.message);
-        res.status(500).json({ error: 'Failed to fetch person' });
-    });
+    }).catch(error => next(error));
 });
-app.delete('/api/persons/:id', (request,response)=>{
+app.delete('/api/persons/:id', (request,response,next)=>{
     Person.findByIdAndDelete(request.params.id)
     .then(result => {
         if (result) {
@@ -51,12 +54,9 @@ app.delete('/api/persons/:id', (request,response)=>{
         } else {
             response.status(404).json({ error: 'Person not found' });
         }
-    }).catch(error => {
-        console.error('Error deleting person:', error.message);
-        response.status(500).json({ error: 'Failed to delete person' });
-    });
+    }).catch(error => next(error));
 });
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response,next) => {
     const person = request.body;
     if (!person.name || !person.number) {
         return response.status(400).json({ error: 'content missing' });
@@ -67,12 +67,29 @@ app.post('/api/persons', (request, response) => {
     });
     newPerson.save().then(savedPerson => {
         response.json(savedPerson);
-    }).catch(error => {
-        console.error('Error saving person:', error.message);
-        response.status(500).json({ error: 'Failed to save person' });
-    });
-    
+    }).catch(error => next(error));
 });
+app.put('/api/persons/:id', (request, response, next) => {
+    const id = request.params.id;
+    const {number} = request.body;
+    Person.findByIdAndUpdate(id, { number }, { new: true}).then(updatedPerson => {
+        if(updatedPerson){
+            response.json(updatedPerson);
+        } else {
+            response.status(404).json({ error: 'Person not found' });
+        }
+    }).catch(error => next(error));
+}); 
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  } 
+
+  next(error)
+}
+app.use(errorHandler);
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
