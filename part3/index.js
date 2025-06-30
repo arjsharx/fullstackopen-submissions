@@ -44,9 +44,17 @@ app.get('/api/persons/:id',(req,res)=> {
     });
 });
 app.delete('/api/persons/:id', (request,response)=>{
-    const id = request.params.id;
-    persons = persons.filter(person => person.id !==id);
-    response.status(204).end();
+    Person.findByIdAndRemove(request.params.id)
+    .then(result => {
+        if (result) {
+            response.status(204).end();
+        } else {
+            response.status(404).json({ error: 'Person not found' });
+        }
+    }).catch(error => {
+        console.error('Error deleting person:', error.message);
+        response.status(500).json({ error: 'Failed to delete person' });
+    });
 });
 app.post('/api/persons', (request, response) => {
     const person = request.body;
