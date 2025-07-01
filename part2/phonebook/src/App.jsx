@@ -41,11 +41,10 @@ const App = () => {
         setTimeout(() => setNotifMessage(null),5000)
       }
       ).catch(error => {
-        setErrorMessage('Name has been removed from phonebook')
-        setTimeout(()=>
-          setErrorMessage(null),5000)
-        })
-        setPersons(persons.filter(n=>n.id!=requiredId))
+      setErrorMessage(error.response.data.error)
+      setTimeout(()=>
+        setErrorMessage(null),5000)
+      })
       }
       return;
     }
@@ -55,12 +54,17 @@ const App = () => {
       name : newName,
       number: newNumber,
     }
-    personsService.create(personObject)
-    setPersons(persons.concat(personObject))
-    setNotifMessage(newName + ' is added to contacts')
-        setTimeout(() => setNotifMessage(null),5000)
-    setNewName('')
-    setNewNumber('')
+    personsService.create(personObject).then(response => {
+      setPersons(persons.concat(response.data))
+      setNewName('')
+      setNewNumber('')
+      setNotifMessage(`Added ${newName}`)
+      setTimeout(() => setNotifMessage(null),5000)
+    }).catch(error => {
+      setErrorMessage( error.response.data.error)
+      setTimeout(()=>
+        setErrorMessage(null),5000)
+    })
     
   }
 }
