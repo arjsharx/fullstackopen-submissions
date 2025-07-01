@@ -2,7 +2,8 @@ require('dotenv').config();
 const Person = require('./models/person');
 const express = require('express');
 const morgan = require('morgan');
-const cors = require('cors');const app = express();
+const cors = require('cors');const { Query } = require('mongoose');
+const app = express();
 app.use(express.json());
 app.use(express.static('dist'));
 app.use(cors());
@@ -72,7 +73,7 @@ app.post('/api/persons', (request, response,next) => {
 app.put('/api/persons/:id', (request, response, next) => {
     const id = request.params.id;
     const {number} = request.body;
-    Person.findByIdAndUpdate(id, { number }, { new: true}).then(updatedPerson => {
+    Person.findByIdAndUpdate(id, { number }, { new: true, runValidators: true, context: 'Query'}).then(updatedPerson => {
         if(updatedPerson){
             response.json(updatedPerson);
         } else {
@@ -86,6 +87,9 @@ const errorHandler = (error, request, response, next) => {
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
   } 
+  if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
+  }
 
   next(error)
 }
