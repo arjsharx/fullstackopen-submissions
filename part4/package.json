@@ -1,0 +1,17 @@
+{
+  "name": "part4",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.0.1",
+    "express": "^5.1.0",
+    "lodash": "^4.17.21",
+    "mongoose": "^8.16.1"
+  }
+}
